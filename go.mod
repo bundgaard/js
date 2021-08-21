@@ -1,3 +1,3 @@
-module js
+module github.com/bundgaard/js
 
 go 1.17
