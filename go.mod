@@ -1,3 +1,3 @@
 module github.com/bundgaard/js
 
-go 1.17
+go 1.15
