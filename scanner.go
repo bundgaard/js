@@ -19,7 +19,7 @@ type Pos struct {
 
 const EofRune = -1
 
-type Scanner struct {
+type scanner struct {
 	rd           io.RuneReader
 	buf          bytes.Buffer
 	peeking      bool
@@ -28,14 +28,14 @@ type Scanner struct {
 	line, column uint
 }
 
-func (s *Scanner) read() rune {
+func (s *scanner) read() rune {
 	if s.peeking {
 		s.peeking = false
 		return s.peekRune
 	}
 	return s.readChar()
 }
-func (s *Scanner) readChar() rune {
+func (s *scanner) readChar() rune {
 	r, _, err := s.rd.ReadRune()
 	if err != nil {
 		if err != io.EOF {
@@ -47,7 +47,7 @@ func (s *Scanner) readChar() rune {
 	return r
 }
 
-func (s *Scanner) peek() rune {
+func (s *scanner) peek() rune {
 	if s.peeking {
 		return s.peekRune
 	}
@@ -57,12 +57,12 @@ func (s *Scanner) peek() rune {
 	return r
 }
 
-func (s *Scanner) back(r rune) {
+func (s *scanner) back(r rune) {
 	s.peeking = true
 	s.peekRune = r
 }
 
-func (s *Scanner) accum(r rune, valid func(rune) bool) {
+func (s *scanner) accum(r rune, valid func(rune) bool) {
 	s.buf.Reset()
 	for {
 		s.buf.WriteRune(r)
@@ -78,7 +78,7 @@ func (s *Scanner) accum(r rune, valid func(rune) bool) {
 	}
 }
 
-func (s *Scanner) NextToken() *Token {
+func (s *scanner) NextToken() *Token {
 	for {
 		r := s.read()
 
@@ -166,7 +166,7 @@ func (s *Scanner) NextToken() *Token {
 
 }
 
-func (s *Scanner) readString(quote rune) string {
+func (s *scanner) readString(quote rune) string {
 	s.accum(quote, isAlphanum)
 
 	// check if last is quote
@@ -178,7 +178,7 @@ func (s *Scanner) readString(quote rune) string {
 	return s.buf.String()
 }
 
-func (s *Scanner) readLiteral() string {
+func (s *scanner) readLiteral() string {
 	s.accum(s.last, isDigit)
 	return s.buf.String()
 }
@@ -186,7 +186,7 @@ func isDigit(c rune) bool {
 	return '0' <= c && c <= '9'
 }
 
-func (s *Scanner) readName() string {
+func (s *scanner) readName() string {
 	s.accum(s.last, isAlphanum)
 	return s.buf.String()
 }
@@ -196,13 +196,13 @@ func isLetter(ch rune) bool {
 		ch == '_'
 }
 
-func NewScanner(rd io.RuneReader) *Scanner {
-	s := &Scanner{rd: rd, line: 1, column: 1}
+func NewScanner(rd io.RuneReader) *scanner {
+	s := &scanner{rd: rd, line: 1, column: 1}
 	s.readChar()
 	return s
 }
 
-func NewScannerFromFile(fp string) *Scanner {
+func NewScannerFromFile(fp string) *scanner {
 
 	buf, err := ioutil.ReadFile(fp)
 	if err != nil {

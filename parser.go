@@ -2,6 +2,7 @@ package js
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strconv"
@@ -15,7 +16,7 @@ type (
 )
 
 type Parser struct {
-	s       *Scanner
+	s       *scanner
 	current *Token
 	next    *Token
 
@@ -36,9 +37,9 @@ func (p *Parser) peekPrecedence() int {
 	}
 	return Lowest
 }
-func NewParser(s *Scanner) *Parser {
+func NewParser(rd io.RuneReader) *Parser {
 	p := &Parser{
-		s: s,
+		s: &scanner{rd: rd},
 	}
 
 	p.infixParseFns = make(map[TokenType]infixParseFn)
