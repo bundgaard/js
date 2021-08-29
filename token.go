@@ -46,6 +46,6 @@ type Token struct {
 	Value string
 }
 
-func newToken(tokenType TokenType, value byte) *Token {
-	return &Token{Type: tokenType, Value: string(value)}
+func newToken(tokenType TokenType, value string) *Token {
+	return &Token{Type: tokenType, Value: value}
 }

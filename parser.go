@@ -228,7 +228,7 @@ func (p *Parser) parseExpression(priority int) Expression {
 				log.Fatal(err)
 			}
 			defer bugFile.Close()
-			fmt.Fprintf(bugFile, "%s; error at (%d,%d)", p.s.buf, p.s.line, p.s.column)
+			fmt.Fprintf(bugFile, "%v; error at (%d,%d)", &p.s.buf, p.s.line, p.s.column)
 			os.Exit(1)
 		}
 		log.Printf("no prefix for %v (%d,%d)", p.current, p.s.line, p.s.column)

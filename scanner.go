@@ -1,241 +1,209 @@
 package js
 
 import (
+	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
-	"unicode"
+	"os"
 )
 
-type Scanner struct {
-	in           io.Reader
-	buf          []byte
-	position     int
-	readPosition int
-	ch           byte
+///////////////////////////////////////////////////////////////////////////////
 
-	errh         func(line, col uint, msg string) // error handler
-	ioerr        error                            // pending IO error
+type Pos struct {
+	Line   int
+	Column int
+}
+
+type Scanner struct {
+	rd           io.RuneReader
+	buf          bytes.Buffer
+	peeking      bool
+	peekRune     rune
+	last         rune
 	line, column uint
 }
 
-func (s *Scanner) init(src io.Reader, errh func(line, col uint, msg string)) {
-	s.in = src
-	s.errh = errh
-
-	if s.buf == nil {
-		s.buf = make([]byte, nextSize(0))
+func (s *Scanner) read() rune {
+	if s.peeking {
+		s.peeking = false
+		return s.peekRune
 	}
-
-	s.ioerr = nil
-	s.line = 0
-	s.column = 0
-
+	return s.readChar()
+}
+func (s *Scanner) readChar() rune {
+	r, _, err := s.rd.ReadRune()
+	if err != nil {
+		if err != io.EOF {
+			fmt.Fprintln(os.Stderr)
+		}
+		r = EofRune
+	}
+	s.last = r
+	return r
 }
 
-func (s *Scanner) readChar() {
-	if s.readPosition >= len(s.buf) {
-		s.ch = 0
-	} else {
-		s.ch = s.buf[s.readPosition]
+func (s *Scanner) peek() rune {
+	if s.peeking {
+		return s.peekRune
 	}
-	s.column++
-	s.position = s.readPosition
-	s.readPosition++
+	r := s.read()
+	s.peeking = true
+	s.peekRune = r
+	return r
 }
 
-func nextSize(size int) int {
-	const min = 4 << 10 // 4K minimum buffer size
-	const max = 1 << 20 // 1M maximum buffer size which will be doubled
-
-	if size < min {
-		return min
-	}
-	if size <= max {
-		return size << 1
-	}
-
-	return size + max
+func (s *Scanner) back(r rune) {
+	s.peeking = true
+	s.peekRune = r
 }
 
-func (s *Scanner) peek() byte {
-	var c byte
-	if s.readPosition >= len(s.buf) {
-		c = 0
-	} else {
-		c = s.buf[s.readPosition]
+func (s *Scanner) accum(r rune, valid func(rune) bool) {
+	s.buf.Reset()
+	for {
+		s.buf.WriteRune(r)
+		r = s.read()
+		if r == EofRune {
+			return
+		}
+
+		if !valid(r) {
+			s.back(r)
+			return
+		}
 	}
-	return c
 }
 
 func (s *Scanner) NextToken() *Token {
-	token := new(Token)
-
-	s.skipWhitespace()
-
-	switch s.ch {
-	case '=':
-		token = newToken(Assign, s.ch)
-	case ';':
-		token = newToken(Semi, s.ch)
-	case '.':
-
-		token = newToken(Dot, s.ch)
-	case ',':
-		token = newToken(Comma, s.ch)
-	case '"', '\'':
-		token.Type = String
-		token.Value = s.readString(s.ch)
-	case '+':
-		token = newToken(Add, s.ch) // TODO(dbundgaard) turn into bitset of operators...
-	case '-':
-		token = newToken(Sub, s.ch) // TODO(dbundgaard) turn into bitset of operators...
-	case '*':
-		token = newToken(Mul, s.ch) // TODO(dbundgaard) turn into bitset of operators...
-	case '/':
-		peek := s.peek()
-		if peek == '/' {
-			position := s.position
-			s.readChar()
-			// line comment ignore to end of line
-
-			for s.ch != '\n' && s.ch != 0 {
-				s.readChar()
-			}
-			token.Type = CommentLine
-			token.Value = string(s.buf[position:s.position])
-		} else if peek == '*' {
-			position := s.position
-			s.readChar()
-			for {
-
-				if s.ch == '*' && s.buf[s.readPosition] == '/' {
-					s.readChar()
-
-					break
-				}
-				s.readChar()
-			}
-
-			token.Type = CommentBlock
-			v := s.buf[position : s.position+1]
-			token.Value = string(v)
-		} else {
-			token = newToken(Div, s.ch) // TODO(dbundgaard) turn into bitset of operators...
-		}
-
-	case '(':
-		token = newToken(OpenParen, s.ch)
-	case ')':
-		token = newToken(CloseParent, s.ch)
-	case '[':
-		token = newToken(OpenBracket, s.ch)
-	case ']':
-		token = newToken(CloseBracket, s.ch)
-	case '{':
-		token = newToken(OpenCurly, s.ch)
-	case '}':
-		token = newToken(CloseCurly, s.ch)
-	case ':':
-		token = newToken(Colon, s.ch)
-	case 0:
-		token.Value = ""
-		token.Type = EOF
-	default:
-		if isLetter(s.ch) {
-			name := s.readName()
-			v, ok := keywords[name]
-			if ok {
-				token.Type = v
-				token.Value = name
-			} else {
-
-				token.Type = Ident
-				token.Value = name
-			}
-
-			return token
-		} else if isDigit(s.ch) {
-			token.Type = Number
-			token.Value = s.readLiteral()
-		} else {
-			token.Type = Illegal
-			token.Value = string(s.ch)
-
-		}
-		return token
-	}
-
-	s.readChar()
-	return token
-}
-
-func (s *Scanner) readString(quote byte) string {
-	position := s.position + 1
 	for {
+		r := s.read()
 
-		if s.ch == '\\' && s.buf[s.readPosition] == quote {
-			s.readChar()
-			continue
-		} /* else if s.ch == '\\' && s.input[s.readPosition] == 'u' {
-			s.readChar()
-			s.readChar()
-		} */
-		s.readChar()
-		if s.ch == quote || s.ch == 0 {
-			break
+		switch {
+		case isSpace(r):
+		case r == '=':
+			return newToken(Assign, "=")
+		case r == EofRune:
+			return newToken(EOF, "EOF")
+		case r == ';':
+			return newToken(Semi, ";")
+		case r == '.':
+			return newToken(Dot, ".")
+		case r == ',':
+			return newToken(Comma, ",")
+		case r == '"' || r == '\'':
+			return newToken(String, s.readString(r))
+		case r == '+':
+			return newToken(Add, "+")
+		case r == '-':
+			return newToken(Sub, "-")
+		case r == '/':
+			pr := s.peek()
+			if pr == '/' {
+				// read to newline or EofRune
+				for s.last != '\n' && s.last != EofRune {
+					s.read()
+					s.peeking = false
+				}
+				continue
+			} else if pr == '*' {
+				// read to */
+
+				for {
+					if s.last == '*' && s.peek() == '/' {
+						s.read()
+						break
+					}
+					s.read()
+				}
+				continue
+
+			}
+			return newToken(Div, "/")
+		case r == '*':
+			return newToken(Mul, "*")
+		case r == '(':
+			return newToken(OpenParen, "(")
+		case r == ')':
+			return newToken(OpenParen, ")")
+		case r == '{':
+			return newToken(OpenCurly, "{")
+		case r == '}':
+			return newToken(CloseCurly, "}")
+		case r == '[':
+			return newToken(OpenBracket, "[")
+		case r == ']':
+			return newToken(CloseBracket, "]")
+		default:
+			token := new(Token)
+			if isLetter(r) {
+				name := s.readName()
+				v, ok := keywords[name]
+				if ok {
+					token.Type = v
+					token.Value = name
+				} else {
+
+					token.Type = Ident
+					token.Value = name
+				}
+
+				return token
+			} else if isDigit(r) {
+				token.Type = Number
+				token.Value = s.readLiteral()
+			} else {
+				token.Type = Illegal
+				token.Value = string(s.last)
+
+			}
+			return token
 		}
-
 	}
 
-	return string(s.buf[position:s.position])
-
 }
+
+func (s *Scanner) readString(quote rune) string {
+	s.accum(quote, isAlphanum)
+
+	// check if last is quote
+	if r := s.peek(); r != quote || r != EofRune {
+		fmt.Fprintf(os.Stderr, "invalid token after %s", &s.buf)
+		os.Exit(1)
+	}
+
+	return s.buf.String()
+}
+
 func (s *Scanner) readLiteral() string {
-	position := s.position
-	for isDigit(s.ch) {
-		s.readChar()
-	}
-	v := s.buf[position:s.position]
-	return string(v)
-
+	s.accum(s.last, isDigit)
+	return s.buf.String()
 }
-func isDigit(c byte) bool {
+func isDigit(c rune) bool {
 	return '0' <= c && c <= '9'
 }
+
 func (s *Scanner) readName() string {
-	position := s.position
-	for isLetter(s.ch) || isDigit(s.ch) {
-		s.readChar()
-	}
-	v := s.buf[position:s.position]
-	return string(v)
+	s.accum(s.last, isAlphanum)
+	return s.buf.String()
 }
-func isLetter(ch byte) bool {
+func isLetter(ch rune) bool {
 	return 'a' <= ch && ch <= 'z' ||
 		'A' <= ch && ch <= 'Z' ||
 		ch == '_'
 }
-func (s *Scanner) skipWhitespace() {
-	for unicode.IsSpace(rune(s.ch)) {
-		if s.ch == '\n' {
-			s.column = 1
-			s.line++
-		}
-		s.readChar()
-	}
-}
 
-func NewScanner(input string) *Scanner {
-	s := &Scanner{buf: []byte(input), line: 1, column: 1}
+func NewScanner(rd io.RuneReader) *Scanner {
+	s := &Scanner{rd: rd, line: 1, column: 1}
 	s.readChar()
 	return s
 }
 
 func NewScannerFromFile(fp string) *Scanner {
+
 	buf, err := ioutil.ReadFile(fp)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return NewScanner(string(buf))
+	return NewScanner(bytes.NewReader(buf))
 }
