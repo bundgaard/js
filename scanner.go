@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"unicode"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -15,6 +16,8 @@ type Pos struct {
 	Line   int
 	Column int
 }
+
+const EofRune = -1
 
 type Scanner struct {
 	rd           io.RuneReader
@@ -206,4 +209,16 @@ func NewScannerFromFile(fp string) *Scanner {
 		log.Fatal(err)
 	}
 	return NewScanner(bytes.NewReader(buf))
+}
+
+func isSpace(r rune) bool {
+	return r == ' ' || r == '\t' || r == '\n' || r == '\r'
+}
+
+func isNumber(r rune) bool {
+	return '0' <= r && r <= '9'
+}
+
+func isAlphanum(r rune) bool {
+	return r == '_' || isNumber(r) || unicode.IsLetter(r)
 }
