@@ -20,7 +20,8 @@ func TestParser(t *testing.T) {
 						Value: "s"},
 					Value: &NumberLiteral{
 						Token: newToken(Number, "1234"),
-						Value: 1234},
+						Value: 1234,
+					},
 				},
 			},
 		}},
