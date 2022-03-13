@@ -6,10 +6,6 @@ import (
 	"strings"
 )
 
-///////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////
-
 const (
 	_ int = iota
 	Lowest
@@ -28,6 +24,7 @@ var precedences = map[TokenType]int{
 	Mul:         Product,
 	Div:         Product,
 	OpenBracket: Index,
+	OpenParen:   Call,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -100,7 +97,7 @@ func (hl *HashLiteral) expressionNode()      {}
 func (hl *HashLiteral) TokenLiteral() string { return hl.Token.Value }
 func (hl *HashLiteral) String() string {
 	var out bytes.Buffer
-	pairs := []string{}
+	var pairs []string
 	for k, v := range hl.Pairs {
 		pairs = append(pairs, k.String()+":"+v.String())
 	}
@@ -213,5 +210,28 @@ func (ie *IndexExpression) String() string {
 	out.WriteString("[")
 	out.WriteString(ie.Index.String())
 	out.WriteString("])")
+	return out.String()
+}
+
+type CallExpression struct {
+	Token     *Token
+	Function  Expression
+	Arguments []Expression
+}
+
+func (ce *CallExpression) expressionNode()      {}
+func (ce *CallExpression) TokenLiteral() string { return ce.Token.Value }
+func (ce *CallExpression) String() string {
+	var out strings.Builder
+	var args []string
+	for _, a := range ce.Arguments {
+		args = append(args, a.String())
+	}
+
+	out.WriteString(ce.Function.String())
+	out.WriteString("(")
+	out.WriteString(strings.Join(args, ", "))
+	out.WriteString(")")
+
 	return out.String()
 }

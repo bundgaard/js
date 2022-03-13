@@ -20,14 +20,30 @@ type ObjectType uint8
 
 const (
 	_ ObjectType = iota
-	NullObject
+	NullObj
 	ErrorObject
 	ReturnValueObject
 	IntegerObject
 	StringObj
 	ArrayObject
 	HashObject
+	NumberObj
+	BuiltinObj
 )
+
+type NullObject struct {
+}
+
+func (no *NullObject) Type() ObjectType { return NullObj }
+func (no *NullObject) Inspect() string  { return "null" }
+
+type BuiltinFunction func(args ...Object) Object
+type BuiltinObject struct {
+	Fn BuiltinFunction
+}
+
+func (b *BuiltinObject) Type() ObjectType { return BuiltinObj }
+func (b *BuiltinObject) Inspect() string  { return "builtin function" }
 
 type ReturnValue struct {
 	Value Object
@@ -62,6 +78,18 @@ func (s *StringObject) HashKey() HashKey {
 	h.Write([]byte(s.Value))
 
 	return HashKey{Type: s.Type(), Value: h.Sum64()}
+}
+
+type NumberObject struct {
+	Value int64
+}
+
+func (n *NumberObject) Type() ObjectType { return NumberObj }
+func (n *NumberObject) Inspect() string  { return fmt.Sprintf("%d", n.Value) }
+func (n *NumberObject) HashKey() HashKey {
+	h := fnv.New64a()
+	fmt.Fprintf(h, "%d", n.Value)
+	return HashKey{Type: n.Type(), Value: h.Sum64()}
 }
 
 type Error struct {

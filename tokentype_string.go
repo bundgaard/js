@@ -25,7 +25,7 @@ func _() {
 	_ = x[Mul-15]
 	_ = x[Div-16]
 	_ = x[OpenParen-17]
-	_ = x[CloseParent-18]
+	_ = x[CloseParen-18]
 	_ = x[OpenBracket-19]
 	_ = x[CloseBracket-20]
 	_ = x[OpenCurly-21]

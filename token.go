@@ -25,7 +25,7 @@ const (
 	Div // /
 
 	OpenParen    // (
-	CloseParent  // )
+	CloseParen   // )
 	OpenBracket  // [
 	CloseBracket // ]
 	OpenCurly    // {

@@ -55,9 +55,40 @@ func NewParser(rd io.RuneReader) *Parser {
 	p.registerInfix(Add, p.parseInfixExpression)
 	p.registerInfix(Assign, p.parseInfixExpression)
 	p.registerInfix(OpenBracket, p.parseIndexExpression)
+	p.registerInfix(OpenParen, p.parseCallExpression)
 	p.nextToken()
 	p.nextToken()
 	return p
+}
+
+func (p *Parser) parseCallExpression(function Expression) Expression {
+	exp := &CallExpression{
+		Token:    p.current,
+		Function: function,
+	}
+	exp.Arguments = p.parseCallArguments()
+	return exp
+}
+func (p *Parser) parseCallArguments() []Expression {
+	var args []Expression
+
+	if p.peekTokenIs(CloseParen) {
+		p.nextToken()
+		return args
+	}
+
+	p.nextToken()
+	args = append(args, p.parseExpression(Lowest))
+	for p.peekTokenIs(Comma) {
+		p.nextToken()
+		p.nextToken()
+		args = append(args, p.parseExpression(Lowest))
+	}
+
+	if !p.expectPeek(CloseParen) {
+		return nil
+	}
+	return args
 }
 func (p *Parser) parseDotExpression() Expression {
 
