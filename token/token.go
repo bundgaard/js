@@ -1,4 +1,4 @@
-package js
+package token
 
 //go:generate stringer -type TokenType
 type TokenType uint8
@@ -37,8 +37,9 @@ const (
 	Number
 )
 
-var keywords = map[string]TokenType{
+var Keywords = map[string]TokenType{
 	"var": Var,
+	"let": Var,
 }
 
 type Token struct {
@@ -46,6 +47,6 @@ type Token struct {
 	Value string
 }
 
-func newToken(tokenType TokenType, value string) *Token {
+func New(tokenType TokenType, value string) *Token {
 	return &Token{Type: tokenType, Value: value}
 }

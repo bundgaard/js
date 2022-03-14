@@ -1,8 +1,9 @@
-package js
+package scanner
 
 import (
 	"bytes"
 	"fmt"
+	"github.com/bundgaard/js/token"
 	"io"
 	"io/ioutil"
 	"log"
@@ -19,23 +20,23 @@ type Pos struct {
 
 const EofRune = -1
 
-type scanner struct {
+type Scanner struct {
 	rd           io.RuneReader
-	buf          bytes.Buffer
+	Buf          bytes.Buffer
 	peeking      bool
 	peekRune     rune
 	last         rune
-	line, column uint
+	Line, Column uint
 }
 
-func (s *scanner) read() rune {
+func (s *Scanner) read() rune {
 	if s.peeking {
 		s.peeking = false
 		return s.peekRune
 	}
 	return s.readChar()
 }
-func (s *scanner) readChar() rune {
+func (s *Scanner) readChar() rune {
 	r, _, err := s.rd.ReadRune()
 	if err != nil {
 		if err != io.EOF {
@@ -47,7 +48,7 @@ func (s *scanner) readChar() rune {
 	return r
 }
 
-func (s *scanner) peek() rune {
+func (s *Scanner) peek() rune {
 	if s.peeking {
 		return s.peekRune
 	}
@@ -57,15 +58,15 @@ func (s *scanner) peek() rune {
 	return r
 }
 
-func (s *scanner) back(r rune) {
+func (s *Scanner) back(r rune) {
 	s.peeking = true
 	s.peekRune = r
 }
 
-func (s *scanner) accum(r rune, valid func(rune) bool) {
-	s.buf.Reset()
+func (s *Scanner) accum(r rune, valid func(rune) bool) {
+	s.Buf.Reset()
 	for {
-		s.buf.WriteRune(r)
+		s.Buf.WriteRune(r)
 		r = s.read()
 		if r == EofRune {
 			return
@@ -78,28 +79,28 @@ func (s *scanner) accum(r rune, valid func(rune) bool) {
 	}
 }
 
-func (s *scanner) NextToken() *Token {
+func (s *Scanner) NextToken() *token.Token {
 	for {
 		r := s.read()
 
 		switch {
 		case isSpace(r):
 		case r == '=':
-			return newToken(Assign, "=")
+			return token.New(token.Assign, "=")
 		case r == EofRune:
-			return newToken(EOF, "EOF")
+			return token.New(token.EOF, "EOF")
 		case r == ';':
-			return newToken(Semi, ";")
+			return token.New(token.Semi, ";")
 		case r == '.':
-			return newToken(Dot, ".")
+			return token.New(token.Dot, ".")
 		case r == ',':
-			return newToken(Comma, ",")
+			return token.New(token.Comma, ",")
 		case r == '"' || r == '\'':
-			return newToken(String, s.readString(r))
+			return token.New(token.String, s.readString(r))
 		case r == '+':
-			return newToken(Add, "+")
+			return token.New(token.Add, "+")
 		case r == '-':
-			return newToken(Sub, "-")
+			return token.New(token.Sub, "-")
 		case r == '/':
 			pr := s.peek()
 			if pr == '/' {
@@ -122,73 +123,73 @@ func (s *scanner) NextToken() *Token {
 				continue
 
 			}
-			return newToken(Div, "/")
+			return token.New(token.Div, "/")
 		case r == '*':
-			return newToken(Mul, "*")
+			return token.New(token.Mul, "*")
 		case r == '(':
-			return newToken(OpenParen, "(")
+			return token.New(token.OpenParen, "(")
 		case r == ')':
-			return newToken(OpenParen, ")")
+			return token.New(token.OpenParen, ")")
 		case r == '{':
-			return newToken(OpenCurly, "{")
+			return token.New(token.OpenCurly, "{")
 		case r == '}':
-			return newToken(CloseCurly, "}")
+			return token.New(token.CloseCurly, "}")
 		case r == '[':
-			return newToken(OpenBracket, "[")
+			return token.New(token.OpenBracket, "[")
 		case r == ']':
-			return newToken(CloseBracket, "]")
+			return token.New(token.CloseBracket, "]")
 		default:
-			token := new(Token)
+			tk := new(token.Token)
 			if isLetter(r) {
 				name := s.readName()
-				v, ok := keywords[name]
+				v, ok := token.Keywords[name]
 				if ok {
-					token.Type = v
-					token.Value = name
+					tk.Type = v
+					tk.Value = name
 				} else {
 
-					token.Type = Ident
-					token.Value = name
+					tk.Type = token.Ident
+					tk.Value = name
 				}
 
-				return token
+				return tk
 			} else if isDigit(r) {
-				token.Type = Number
-				token.Value = s.readLiteral()
+				tk.Type = token.Number
+				tk.Value = s.readLiteral()
 			} else {
-				token.Type = Illegal
-				token.Value = string(s.last)
+				tk.Type = token.Illegal
+				tk.Value = string(s.last)
 
 			}
-			return token
+			return tk
 		}
 	}
 
 }
 
-func (s *scanner) readString(quote rune) string {
-	s.accum(quote, isAlphanum)
+func (s *Scanner) readString(quote rune) string {
+	s.accum(quote, isAlphaNum)
 
 	// check if last is quote
 	if r := s.peek(); r != quote || r != EofRune {
-		fmt.Fprintf(os.Stderr, "invalid token after %s", &s.buf)
+		fmt.Fprintf(os.Stderr, "invalid token after %s", &s.Buf)
 		os.Exit(1)
 	}
 
-	return s.buf.String()
+	return s.Buf.String()
 }
 
-func (s *scanner) readLiteral() string {
+func (s *Scanner) readLiteral() string {
 	s.accum(s.last, isDigit)
-	return s.buf.String()
+	return s.Buf.String()
 }
 func isDigit(c rune) bool {
 	return '0' <= c && c <= '9'
 }
 
-func (s *scanner) readName() string {
-	s.accum(s.last, isAlphanum)
-	return s.buf.String()
+func (s *Scanner) readName() string {
+	s.accum(s.last, isAlphaNum)
+	return s.Buf.String()
 }
 func isLetter(ch rune) bool {
 	return 'a' <= ch && ch <= 'z' ||
@@ -196,13 +197,13 @@ func isLetter(ch rune) bool {
 		ch == '_'
 }
 
-func NewScanner(rd io.RuneReader) *scanner {
-	s := &scanner{rd: rd, line: 1, column: 1}
+func NewScanner(rd io.RuneReader) *Scanner {
+	s := &Scanner{rd: rd, Line: 1, Column: 1}
 	s.readChar()
 	return s
 }
 
-func NewScannerFromFile(fp string) *scanner {
+func NewScannerFromFile(fp string) *Scanner {
 
 	buf, err := ioutil.ReadFile(fp)
 	if err != nil {
@@ -219,6 +220,6 @@ func isNumber(r rune) bool {
 	return '0' <= r && r <= '9'
 }
 
-func isAlphanum(r rune) bool {
+func isAlphaNum(r rune) bool {
 	return r == '_' || isNumber(r) || unicode.IsLetter(r)
 }

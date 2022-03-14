@@ -1,6 +1,8 @@
-package js
+package parser
 
 import (
+	"github.com/bundgaard/js/ast"
+	"github.com/bundgaard/js/token"
 	"strings"
 	"testing"
 )
@@ -9,17 +11,17 @@ func TestParser(t *testing.T) {
 
 	tests := []struct {
 		Input    string
-		Expected *Program
+		Expected *ast.Program
 	}{
-		{Input: `var s = 1234;`, Expected: &Program{
-			Statements: []Statement{
-				&VariableStatement{
-					Token: &Token{Type: Var, Value: "var"},
-					Name: &Identifier{
-						Token: newToken(Ident, "s"),
+		{Input: `var s = 1234;`, Expected: &ast.Program{
+			Statements: []ast.Statement{
+				&ast.VariableStatement{
+					Token: &token.Token{Type: token.Var, Value: "var"},
+					Name: &ast.Identifier{
+						Token: token.New(token.Ident, "s"),
 						Value: "s"},
-					Value: &NumberLiteral{
-						Token: newToken(Number, "1234"),
+					Value: &ast.NumberLiteral{
+						Token: token.New(token.Number, "1234"),
 						Value: 1234,
 					},
 				},
@@ -40,7 +42,7 @@ func TestParser(t *testing.T) {
 
 }
 
-func helperDeepEqual(t *testing.T, expected, got *Program) bool {
+func helperDeepEqual(t *testing.T, expected, got *ast.Program) bool {
 	t.Helper()
 	result := false
 	if len(got.Statements) != len(expected.Statements) {

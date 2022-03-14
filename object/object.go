@@ -1,4 +1,4 @@
-package js
+package object
 
 import (
 	"bytes"
@@ -30,27 +30,6 @@ const (
 	NumberObj
 	BuiltinObj
 )
-
-type NullObject struct {
-}
-
-func (no *NullObject) Type() ObjectType { return NullObj }
-func (no *NullObject) Inspect() string  { return "null" }
-
-type BuiltinFunction func(args ...Object) Object
-type BuiltinObject struct {
-	Fn BuiltinFunction
-}
-
-func (b *BuiltinObject) Type() ObjectType { return BuiltinObj }
-func (b *BuiltinObject) Inspect() string  { return "builtin function" }
-
-type ReturnValue struct {
-	Value Object
-}
-
-func (rv *ReturnValue) Type() ObjectType { return ReturnValueObject }
-func (rv *ReturnValue) Inspect() string  { return rv.Value.Inspect() }
 
 type Integer struct {
 	Value int64

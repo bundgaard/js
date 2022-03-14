@@ -1,35 +1,12 @@
-package js
+package ast
 
 import (
 	"bytes"
 	"fmt"
+	"github.com/bundgaard/js/token"
 	"strings"
 )
 
-const (
-	_ int = iota
-	Lowest
-	Equals
-	LessGreater
-	Sum
-	Product
-	Prefix
-	Call
-	Index
-)
-
-var precedences = map[TokenType]int{
-	Add:         Sum,
-	Sub:         Sum,
-	Mul:         Product,
-	Div:         Product,
-	OpenBracket: Index,
-	OpenParen:   Call,
-}
-
-///////////////////////////////////////////////////////////////////////////////
-/// AST
-///////////////////////////////////////////////////////////////////////////////
 type Node interface {
 	TokenLiteral() string
 	String() string
@@ -68,7 +45,7 @@ func (p *Program) String() string {
 }
 
 type ArrayLiteral struct {
-	Token    *Token
+	Token    *token.Token
 	Elements []Expression
 }
 
@@ -89,7 +66,7 @@ func (al *ArrayLiteral) String() string {
 }
 
 type HashLiteral struct {
-	Token *Token
+	Token *token.Token
 	Pairs map[Expression]Expression
 }
 
@@ -108,7 +85,7 @@ func (hl *HashLiteral) String() string {
 }
 
 type VariableStatement struct {
-	Token *Token
+	Token *token.Token
 	Name  *Identifier
 	Value Expression
 }
@@ -128,7 +105,7 @@ func (vs *VariableStatement) String() string {
 }
 
 type Identifier struct {
-	Token *Token
+	Token *token.Token
 	Value string
 }
 
@@ -139,7 +116,7 @@ func (id *Identifier) String() string {
 }
 
 type ExpressionStatement struct {
-	Token      *Token
+	Token      *token.Token
 	Expression Expression
 }
 
@@ -153,7 +130,7 @@ func (es *ExpressionStatement) String() string {
 }
 
 type StringLiteral struct {
-	Token *Token
+	Token *token.Token
 	Value string
 }
 
@@ -164,7 +141,7 @@ func (sl *StringLiteral) String() string {
 }
 
 type NumberLiteral struct {
-	Token *Token
+	Token *token.Token
 	Value int64
 }
 
@@ -175,7 +152,7 @@ func (nl *NumberLiteral) String() string {
 }
 
 type InfixExpression struct {
-	Token    *Token
+	Token    *token.Token
 	Left     Expression
 	Operator string
 	Right    Expression
@@ -196,7 +173,7 @@ func (ie *InfixExpression) String() string {
 }
 
 type IndexExpression struct {
-	Token *Token
+	Token *token.Token
 	Left  Expression
 	Index Expression
 }
@@ -214,7 +191,7 @@ func (ie *IndexExpression) String() string {
 }
 
 type CallExpression struct {
-	Token     *Token
+	Token     *token.Token
 	Function  Expression
 	Arguments []Expression
 }
