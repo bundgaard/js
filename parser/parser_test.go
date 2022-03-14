@@ -33,7 +33,7 @@ func TestParser(t *testing.T) {
 		p := NewParser(strings.NewReader(test.Input))
 
 		program := p.Parse()
-		t.Logf("program %T %+v %T %+v", program, program, test.Expected, test.Expected)
+		// t.Logf("program type=%T value=%+v type=%T value=%+v", program, program, test.Expected, test.Expected)
 		if !helperDeepEqual(t, test.Expected, program) {
 			t.Errorf("test[%04d] expected %v. got %v", idx, test.Expected, program)
 		}
@@ -50,7 +50,7 @@ func helperDeepEqual(t *testing.T, expected, got *ast.Program) bool {
 		return false
 	}
 	for idx := range expected.Statements {
-		if expected.Statements[idx] == got.Statements[idx] {
+		if expected.Statements[idx].String() == got.Statements[idx].String() {
 			result = true
 		}
 	}

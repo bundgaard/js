@@ -82,7 +82,6 @@ func (s *Scanner) accum(r rune, valid func(rune) bool) {
 func (s *Scanner) NextToken() *token.Token {
 	for {
 		r := s.read()
-
 		switch {
 		case isSpace(r):
 		case r == '=':
@@ -168,14 +167,13 @@ func (s *Scanner) NextToken() *token.Token {
 }
 
 func (s *Scanner) readString(quote rune) string {
-	s.accum(quote, isAlphaNum)
-
-	// check if last is quote
-	if r := s.peek(); r != quote || r != EofRune {
-		fmt.Fprintf(os.Stderr, "invalid token after %s", &s.Buf)
-		os.Exit(1)
+	s.Buf.Reset()
+	s.Buf.WriteRune(quote)
+	for s.peek() != '"' {
+		r := s.read()
+		s.Buf.WriteRune(r)
 	}
-
+	s.Buf.WriteRune(s.read())
 	return s.Buf.String()
 }
 
@@ -197,9 +195,8 @@ func isLetter(ch rune) bool {
 		ch == '_'
 }
 
-func NewScanner(rd io.RuneReader) *Scanner {
+func New(rd io.RuneReader) *Scanner {
 	s := &Scanner{rd: rd, Line: 1, Column: 1}
-	s.readChar()
 	return s
 }
 
@@ -209,7 +206,7 @@ func NewScannerFromFile(fp string) *Scanner {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return NewScanner(bytes.NewReader(buf))
+	return New(bytes.NewReader(buf))
 }
 
 func isSpace(r rune) bool {

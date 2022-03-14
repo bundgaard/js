@@ -42,7 +42,7 @@ func (p *Parser) peekPrecedence() int {
 }
 func NewParser(rd io.RuneReader) *Parser {
 	p := &Parser{
-		s: scanner.NewScanner(rd),
+		s: scanner.New(rd),
 	}
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -56,6 +56,10 @@ func NewParser(rd io.RuneReader) *Parser {
 	p.registerPrefix(token.Dot, p.parseDotExpression)
 
 	p.registerInfix(token.Add, p.parseInfixExpression)
+	p.registerInfix(token.Mul, p.parseInfixExpression)
+	p.registerInfix(token.Div, p.parseInfixExpression)
+	p.registerInfix(token.Sub, p.parseInfixExpression)
+
 	p.registerInfix(token.Assign, p.parseInfixExpression)
 	p.registerInfix(token.OpenBracket, p.parseIndexExpression)
 	p.registerInfix(token.OpenParen, p.parseCallExpression)

@@ -39,7 +39,6 @@ const (
 
 var Keywords = map[string]TokenType{
 	"var": Var,
-	"let": Var,
 }
 
 type Token struct {
