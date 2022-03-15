@@ -15,6 +15,8 @@ var z = x * y;
 var zz = x + y;
 var zzz = x - y;
 var zzzz = z / x;
+
+var usch = "test1 "  + "test 2";
 // println(z);
 `))
 	environment := make(map[string]object.Object)
