@@ -36,9 +36,9 @@ func _() {
 	_ = x[Number-26]
 }
 
-const _TokenType_name = "EOFIllegalAssignSemiDotCommaColonQuoteSQuoteIdentLiteralStringAddSubMulDivOpenParenCloseParentOpenBracketCloseBracketOpenCurlyCloseCurlyCommentLineCommentBlockVarNumber"
+const _TokenType_name = "EOFIllegalAssignSemiDotCommaColonQuoteSQuoteIdentLiteralStringAddSubMulDivOpenParenCloseParenOpenBracketCloseBracketOpenCurlyCloseCurlyCommentLineCommentBlockVarNumber"
 
-var _TokenType_index = [...]uint8{0, 3, 10, 16, 20, 23, 28, 33, 38, 44, 49, 56, 62, 65, 68, 71, 74, 83, 94, 105, 117, 126, 136, 147, 159, 162, 168}
+var _TokenType_index = [...]uint8{0, 3, 10, 16, 20, 23, 28, 33, 38, 44, 49, 56, 62, 65, 68, 71, 74, 83, 93, 104, 116, 125, 135, 146, 158, 161, 167}
 
 func (i TokenType) String() string {
 	i -= 1

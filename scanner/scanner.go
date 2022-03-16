@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"unicode"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -128,7 +127,7 @@ func (s *Scanner) NextToken() *token.Token {
 		case r == '(':
 			return token.New(token.OpenParen, "(")
 		case r == ')':
-			return token.New(token.OpenParen, ")")
+			return token.New(token.CloseParen, ")")
 		case r == '{':
 			return token.New(token.OpenCurly, "{")
 		case r == '}':
@@ -146,11 +145,9 @@ func (s *Scanner) NextToken() *token.Token {
 					tk.Type = v
 					tk.Value = name
 				} else {
-
 					tk.Type = token.Ident
 					tk.Value = name
 				}
-
 				return tk
 			} else if isDigit(r) {
 				tk.Type = token.Number
@@ -182,18 +179,10 @@ func (s *Scanner) readLiteral() string {
 	s.accum(s.last, isDigit)
 	return s.Buf.String()
 }
-func isDigit(c rune) bool {
-	return '0' <= c && c <= '9'
-}
 
 func (s *Scanner) readName() string {
 	s.accum(s.last, isAlphaNum)
 	return s.Buf.String()
-}
-func isLetter(ch rune) bool {
-	return 'a' <= ch && ch <= 'z' ||
-		'A' <= ch && ch <= 'Z' ||
-		ch == '_'
 }
 
 func New(rd io.RuneReader) *Scanner {
@@ -208,16 +197,4 @@ func NewScannerFromFile(fp string) *Scanner {
 		log.Fatal(err)
 	}
 	return New(bytes.NewReader(buf))
-}
-
-func isSpace(r rune) bool {
-	return r == ' ' || r == '\t' || r == '\n' || r == '\r'
-}
-
-func isNumber(r rune) bool {
-	return '0' <= r && r <= '9'
-}
-
-func isAlphaNum(r rune) bool {
-	return r == '_' || isNumber(r) || unicode.IsLetter(r)
 }

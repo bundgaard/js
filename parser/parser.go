@@ -5,8 +5,6 @@ import (
 	"github.com/bundgaard/js/scanner"
 	"github.com/bundgaard/js/token"
 	"io"
-	"log"
-	"strconv"
 )
 
 type (
@@ -57,20 +55,6 @@ func NewParser(rd io.RuneReader) *Parser {
 	return p
 }
 
-func (p *Parser) parseNumberLiteral() ast.Expression {
-	n, err := strconv.Atoi(p.current.Value)
-	if err != nil {
-		log.Println("error number conversion", err)
-	}
-	return &ast.NumberLiteral{Token: p.current, Value: int64(n)}
-}
-func (p *Parser) parseStringLiteral() ast.Expression {
-	return &ast.StringLiteral{Token: p.current, Value: p.current.Value}
-}
-func (p *Parser) parseName() ast.Expression {
-	return &ast.Identifier{Token: p.current, Value: p.current.Value}
-}
-
 func (p *Parser) nextToken() {
 	p.current = p.next
 	p.next = p.s.NextToken()
@@ -92,46 +76,6 @@ func (p *Parser) Parse() *ast.Program {
 	return program
 }
 
-func (p *Parser) parseStatement() ast.Statement {
-	switch p.current.Type {
-	case token.Var:
-		return p.parseVariable()
-	case token.CommentLine:
-		return nil
-	case token.CommentBlock:
-		return nil
-	default:
-		return p.parseExpressionStatement()
-	}
-}
-
-func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
-
-	// expression statement
-	// foo[0] = 1300
-	stmt := &ast.ExpressionStatement{Token: p.current}
-	stmt.Expression = p.parseExpression(ast.Lowest)
-	// dot expression
-	// foo.bar
-	if p.peekTokenIs(token.Dot) {
-		p.nextToken()
-		right := p.parseInfixExpression(stmt.Expression)
-		stmt.Expression = right
-	}
-
-	if p.peekTokenIs(token.Assign) {
-
-		p.nextToken()
-
-		right := p.parseInfixExpression(stmt.Expression)
-		stmt.Expression = right
-	}
-
-	if p.peekTokenIs(token.Semi) {
-		p.nextToken()
-	}
-	return stmt
-}
 func (p *Parser) curPrecedence() int {
 	if p, ok := ast.Precedences[p.current.Type]; ok {
 		return p
@@ -140,22 +84,6 @@ func (p *Parser) curPrecedence() int {
 	return ast.Lowest
 }
 
-func (p *Parser) parseVariable() *ast.VariableStatement {
-	stmt := &ast.VariableStatement{Token: p.current}
-	if !p.expectPeek(token.Ident) {
-		return nil
-	}
-	stmt.Name = &ast.Identifier{Token: p.current, Value: p.current.Value}
-	if !p.expectPeek(token.Assign) {
-		return nil
-	}
-	p.nextToken()
-	stmt.Value = p.parseExpression(ast.Lowest)
-	if p.peekTokenIs(token.Semi) {
-		p.nextToken()
-	}
-	return stmt
-}
 func (p *Parser) currentTokenIs(tokenType token.TokenType) bool {
 	return p.current.Type == tokenType
 }
@@ -169,62 +97,4 @@ func (p *Parser) expectPeek(tokenType token.TokenType) bool {
 		return true
 	}
 	return false
-}
-func (p *Parser) parseArrayLiteral() ast.Expression {
-	array := &ast.ArrayLiteral{Token: p.current}
-	array.Elements = p.parseExpressionList(token.CloseBracket)
-	return array
-}
-
-func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
-	var list []ast.Expression
-
-	if p.peekTokenIs(end) {
-		p.nextToken()
-		return list
-	}
-
-	p.nextToken()
-	list = append(list, p.parseExpression(ast.Lowest))
-	for p.peekTokenIs(token.Comma) {
-		p.nextToken() // ,
-		p.nextToken() // Expression
-		list = append(list, p.parseExpression(ast.Lowest))
-	}
-
-	if !p.expectPeek(end) {
-		return nil
-	}
-	return list
-}
-func (p *Parser) parseHashLiteral() ast.Expression {
-
-	hash := &ast.HashLiteral{Token: p.current}
-	hash.Pairs = make(map[ast.Expression]ast.Expression)
-
-	for !p.peekTokenIs(token.CloseCurly) {
-		p.nextToken() // eat open curly
-
-		key := p.parseExpression(ast.Lowest)
-
-		if !p.expectPeek(token.Colon) {
-			return nil
-		}
-
-		p.nextToken() // EAT Colon
-
-		value := p.parseExpression(ast.Lowest)
-
-		hash.Pairs[key] = value
-		if !p.peekTokenIs(token.CloseCurly) && !p.expectPeek(token.Comma) {
-			return nil
-		}
-
-	}
-
-	if !p.expectPeek(token.CloseCurly) {
-		return nil
-	}
-
-	return hash
 }

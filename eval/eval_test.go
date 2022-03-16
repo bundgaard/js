@@ -18,6 +18,9 @@ var zzzz = z / x;
 
 var usch = "test1 "  + "test 2";
 println(z);
+println(zz);
+println(zzz);
+println(zzzz);
 `))
 	environment := object.NewEnvironment()
 	evaluatedProgram := Eval(p.Parse(), environment)

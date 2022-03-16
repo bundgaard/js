@@ -30,6 +30,7 @@ const (
 	CloseBracket // ]
 	OpenCurly    // {
 	CloseCurly   //	}
+
 	CommentLine  // //
 	CommentBlock // /* */
 
