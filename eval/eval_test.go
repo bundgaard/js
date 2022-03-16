@@ -21,6 +21,12 @@ println(z);
 println(zz);
 println(zzz);
 println(zzzz);
+println(len("hello, World"));
+
+var u = {"hej": 1, "med": "two"};
+
+var o = ["hej", "med", "dig"];
+
 `))
 	environment := object.NewEnvironment()
 	evaluatedProgram := Eval(p.Parse(), environment)

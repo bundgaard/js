@@ -29,6 +29,7 @@ func evalExpressions(exps []ast.Expression, environment *object.Environment) []o
 
 }
 func Eval(n ast.Node, environment *object.Environment) object.Object {
+	log.Printf("Eval %T %v", n, n)
 	switch v := n.(type) {
 	case *ast.Program:
 		return evalProgram(v, environment)
@@ -96,10 +97,8 @@ func Eval(n ast.Node, environment *object.Environment) object.Object {
 		pairs := make(map[object.HashKey]object.HashPair)
 		for kn, vn := range v.Pairs {
 			key := Eval(kn, environment)
-			if key != nil {
-				if key.Type() == object.ErrorObject {
-					return key
-				}
+			if key != nil && isError(key) {
+				return key
 			}
 
 			hkey, ok := key.(object.Hashable)
@@ -121,7 +120,7 @@ func Eval(n ast.Node, environment *object.Environment) object.Object {
 		return &object.Hash{Pairs: pairs}
 
 	default:
-		log.Printf("eval unhandled type %T", v)
+		log.Printf("eval unhandled type %T %v", v, v)
 	}
 
 	return nil
