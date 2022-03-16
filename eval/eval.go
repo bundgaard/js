@@ -7,7 +7,37 @@ import (
 	"log"
 )
 
-func Eval(n ast.Node, environment map[string]object.Object) object.Object {
+func isError(obj object.Object) bool {
+	if obj != nil {
+		return obj.Type() == object.ErrorObject
+	}
+	return false
+}
+func newError(format string, v ...interface{}) *object.Error {
+	return &object.Error{Message: fmt.Sprintf(format, v...)}
+}
+func applyFunction(fn object.Object, args []object.Object) object.Object {
+	switch fn := fn.(type) {
+	case *object.BuiltinObject:
+		return fn.Fn(args...)
+	default:
+		return newError("not function: %q", fn.Type())
+	}
+}
+
+func evalExpressions(exps []ast.Expression, environment *object.Environment) []object.Object {
+	var result []object.Object
+	for _, e := range exps {
+		evaluated := Eval(e, environment)
+		if isError(evaluated) {
+			return []object.Object{evaluated}
+		}
+		result = append(result, evaluated)
+	}
+	return result
+
+}
+func Eval(n ast.Node, environment *object.Environment) object.Object {
 	switch v := n.(type) {
 	case *ast.Program:
 		return evalProgram(v, environment)
@@ -16,27 +46,36 @@ func Eval(n ast.Node, environment map[string]object.Object) object.Object {
 
 	case *ast.VariableStatement:
 		value := Eval(v.Value, environment)
-		if value != nil {
-			if value.Type() == object.ErrorObject {
-				return value
-			}
+		if value != nil && isError(value) {
+			return value
 		}
 
-		environment[v.Name.Value] = value
+		environment.Set(v.Name.Value, value)
+
 	// expressions
 	case *ast.CallExpression:
+		fn := Eval(v.Function, environment)
+		if isError(fn) {
+			return fn
+		}
+
+		args := evalExpressions(v.Arguments, environment)
+		if len(args) == 1 && isError(args[0]) {
+			return args[0]
+		}
+		return applyFunction(fn, args)
 
 	case *ast.InfixExpression:
 		left := Eval(v.Left, environment)
 		if left != nil {
-			if left.Type() == object.ErrorObject {
+			if isError(left) {
 				return left
 			}
 		}
 
 		right := Eval(v.Right, environment)
 		if right != nil {
-			if right.Type() == object.ErrorObject {
+			if isError(right) {
 				return right
 			}
 		}
@@ -51,17 +90,13 @@ func Eval(n ast.Node, environment map[string]object.Object) object.Object {
 		return &object.StringObject{Value: v.Value}
 	case *ast.IndexExpression:
 		left := Eval(v.Left, environment)
-		if left != nil {
-			if left.Type() == object.ErrorObject {
-				return left
-			}
+		if left != nil && isError(left) {
+			return left
 		}
 
 		index := Eval(v.Index, environment)
-		if index != nil {
-			if index.Type() == object.ErrorObject {
-				return index
-			}
+		if index != nil && isError(index) {
+			return index
 		}
 
 		return evalIndexExpression(left, index)
@@ -106,7 +141,7 @@ func evalIndexExpression(left, index object.Object) object.Object {
 	return &object.Error{Message: "skipping index for now"}
 }
 
-func evalStringInfixExpression(operator string, left, right object.Object, env map[string]object.Object) object.Object {
+func evalStringInfixExpression(operator string, left, right object.Object, env *object.Environment) object.Object {
 	leftVal := left.(*object.StringObject).Value
 	rightVal := right.(*object.StringObject).Value
 	return &object.StringObject{
@@ -114,7 +149,7 @@ func evalStringInfixExpression(operator string, left, right object.Object, env m
 	}
 }
 
-func evalNumberInfixExpression(operator string, left, right object.Object, env map[string]object.Object) object.Object {
+func evalNumberInfixExpression(operator string, left, right object.Object, env *object.Environment) object.Object {
 	leftVal := left.(*object.NumberObject).Value
 	rightVal := right.(*object.NumberObject).Value
 	switch operator {
@@ -130,7 +165,7 @@ func evalNumberInfixExpression(operator string, left, right object.Object, env m
 	return nil
 }
 
-func evalInfixExpression(operator string, left, right object.Object, env map[string]object.Object) object.Object {
+func evalInfixExpression(operator string, left, right object.Object, env *object.Environment) object.Object {
 
 	switch {
 	case left.Type() == object.StringObj && right.Type() == object.StringObj:
@@ -144,18 +179,18 @@ func evalInfixExpression(operator string, left, right object.Object, env map[str
 	}
 }
 
-func evalIdentifier(n *ast.Identifier, env map[string]object.Object) object.Object {
+func evalIdentifier(n *ast.Identifier, env *object.Environment) object.Object {
 
-	if val, ok := env[n.Value]; ok {
+	if val, ok := env.Get(n.Value); ok {
 		return val
 	}
 	if builtin, ok := builtins[n.Value]; ok {
 		return builtin
 	}
-	return &object.Error{Message: fmt.Sprintf("identifier not found %q", n.Value)}
+	return newError("identifier %q not found", n.Value)
 }
 
-func evalProgram(n *ast.Program, environment map[string]object.Object) object.Object {
+func evalProgram(n *ast.Program, environment *object.Environment) object.Object {
 	var result object.Object
 
 	for _, statement := range n.Statements {
@@ -170,7 +205,5 @@ func evalProgram(n *ast.Program, environment map[string]object.Object) object.Ob
 			continue
 		}
 	}
-
 	return result
-
 }

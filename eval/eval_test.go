@@ -17,12 +17,22 @@ var zzz = x - y;
 var zzzz = z / x;
 
 var usch = "test1 "  + "test 2";
-// println(z);
+println(z);
 `))
-	environment := make(map[string]object.Object)
+	environment := object.NewEnvironment()
 	evaluatedProgram := Eval(p.Parse(), environment)
 	t.Log(evaluatedProgram)
-	for k, v := range environment {
-		t.Logf("%v -> %v", k, v.Inspect())
-	}
+	environment.ForEach(func(key string, val object.Object) {
+		t.Logf("%v -> %v", key, val.Inspect())
+	})
+}
+
+func TestEvalBuiltin(t *testing.T) {
+	code := `println("Hello, World!");`
+	e := object.NewEnvironment()
+	newParser := parser.NewParser(strings.NewReader(code))
+	eProgram := Eval(newParser.Parse(), e)
+
+	t.Logf("%v", eProgram)
+
 }

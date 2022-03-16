@@ -168,12 +168,13 @@ func (s *Scanner) NextToken() *token.Token {
 
 func (s *Scanner) readString(quote rune) string {
 	s.Buf.Reset()
-	s.Buf.WriteRune(quote)
-	for s.peek() != '"' {
+
+	for s.peek() != quote {
 		r := s.read()
 		s.Buf.WriteRune(r)
 	}
-	s.Buf.WriteRune(s.read())
+	s.read() // eat quote
+
 	return s.Buf.String()
 }
 

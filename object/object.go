@@ -16,6 +16,7 @@ type Object interface {
 	Inspect() string
 }
 
+//go:generate stringer -type ObjectType
 type ObjectType uint8
 
 const (

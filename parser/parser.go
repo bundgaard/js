@@ -1,16 +1,12 @@
 package parser
 
 import (
-	"fmt"
 	"github.com/bundgaard/js/ast"
 	"github.com/bundgaard/js/scanner"
 	"github.com/bundgaard/js/token"
 	"io"
 	"log"
-	"os"
 	"strconv"
-	"sync"
-	"time"
 )
 
 type (
@@ -27,13 +23,6 @@ type Parser struct {
 	infixParseFns  map[token.TokenType]infixParseFn
 }
 
-func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
-	p.prefixParseFns[tokenType] = fn
-}
-
-func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
-	p.infixParseFns[tokenType] = fn
-}
 func (p *Parser) peekPrecedence() int {
 	if v, ok := ast.Precedences[p.next.Type]; ok {
 		return v
@@ -68,51 +57,6 @@ func NewParser(rd io.RuneReader) *Parser {
 	return p
 }
 
-func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
-	exp := &ast.CallExpression{
-		Token:    p.current,
-		Function: function,
-	}
-	exp.Arguments = p.parseCallArguments()
-	return exp
-}
-func (p *Parser) parseCallArguments() []ast.Expression {
-	var args []ast.Expression
-
-	if p.peekTokenIs(token.CloseParen) {
-		p.nextToken()
-		return args
-	}
-
-	p.nextToken()
-	args = append(args, p.parseExpression(ast.Lowest))
-	for p.peekTokenIs(token.Comma) {
-		p.nextToken()
-		p.nextToken()
-		args = append(args, p.parseExpression(ast.Lowest))
-	}
-
-	if !p.expectPeek(token.CloseParen) {
-		return nil
-	}
-	return args
-}
-func (p *Parser) parseDotExpression() ast.Expression {
-
-	log.Printf("parseDotExpression %v %v", p.current, p.next)
-	return nil
-}
-func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
-	exp := &ast.IndexExpression{Token: p.current, Left: left}
-
-	p.nextToken()
-	exp.Index = p.parseExpression(ast.Lowest)
-	if !p.expectPeek(token.CloseBracket) {
-		return nil
-	}
-
-	return exp
-}
 func (p *Parser) parseNumberLiteral() ast.Expression {
 	n, err := strconv.Atoi(p.current.Value)
 	if err != nil {
@@ -195,19 +139,6 @@ func (p *Parser) curPrecedence() int {
 
 	return ast.Lowest
 }
-func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
-	expression := &ast.InfixExpression{
-		Token:    p.current,
-		Operator: p.current.Value,
-		Left:     left,
-	}
-
-	precedence := p.curPrecedence()
-	p.nextToken()
-	expression.Right = p.parseExpression(precedence)
-
-	return expression
-}
 
 func (p *Parser) parseVariable() *ast.VariableStatement {
 	stmt := &ast.VariableStatement{Token: p.current}
@@ -232,61 +163,6 @@ func (p *Parser) peekTokenIs(tokenType token.TokenType) bool {
 	return p.next.Type == tokenType
 }
 
-type AtomicCounter struct {
-	sync.Mutex
-	count int64
-}
-
-func (ac *AtomicCounter) Add() {
-	ac.Lock()
-	defer ac.Unlock()
-	ac.count++
-}
-
-func (ac *AtomicCounter) Get() int64 {
-	ac.Lock()
-	defer ac.Unlock()
-	return ac.count
-}
-
-var counter = AtomicCounter{count: 0}
-
-func (p *Parser) parseExpression(priority int) ast.Expression {
-
-	if p.currentTokenIs(token.CommentLine) || p.currentTokenIs(token.CommentBlock) {
-		p.nextToken()
-	}
-	prefix := p.prefixParseFns[p.current.Type]
-	if prefix == nil {
-		if counter.Get() == 10 {
-
-			filename := time.Now().Format("20060102T15") + ".debug"
-			log.Println("something weird happened, saved to file", filename)
-			bugFile, err := os.Create(filename)
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer bugFile.Close()
-			fmt.Fprintf(bugFile, "%v; error at (%d,%d)", &p.s.Buf, p.s.Line, p.s.Column)
-			os.Exit(1)
-		}
-		log.Printf("no prefix for %v (%d,%d)", p.current, p.s.Line, p.s.Column)
-		counter.Add()
-		return nil
-	}
-	leftExp := prefix()
-
-	for !p.peekTokenIs(token.Semi) && priority < p.peekPrecedence() {
-		infix := p.infixParseFns[p.next.Type]
-		if infix == nil {
-			return leftExp
-		}
-		p.nextToken()
-
-		leftExp = infix(leftExp)
-	}
-	return leftExp
-}
 func (p *Parser) expectPeek(tokenType token.TokenType) bool {
 	if p.peekTokenIs(tokenType) {
 		p.nextToken()
