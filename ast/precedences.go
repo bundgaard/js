@@ -14,7 +14,7 @@ const (
 	Index
 )
 
-var Precedences = map[token.TokenType]int{
+var Precedences = map[token.Type]int{
 	token.Add:         Sum,
 	token.Sub:         Sum,
 	token.Mul:         Product,

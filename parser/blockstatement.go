@@ -8,9 +8,9 @@ import (
 func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	block := &ast.BlockStatement{Token: p.current}
 
-	p.nextToken()
+	p.nextToken() // Eat OpenCurly
 
-	for !p.currentTokenIs(token.CloseBracket) && !p.currentTokenIs(token.EOF) {
+	for !p.currentTokenIs(token.CloseCurly) && !p.currentTokenIs(token.EOF) {
 		stmt := p.parseStatement()
 		if stmt != nil {
 			block.Statements = append(block.Statements, stmt)

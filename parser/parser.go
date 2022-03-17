@@ -18,28 +18,23 @@ type Parser struct {
 	current *token.Token
 	next    *token.Token
 
-	prefixParseFns map[token.TokenType]prefixParseFn
-	infixParseFns  map[token.TokenType]infixParseFn
+	prefixParseFns map[token.Type]prefixParseFn
+	infixParseFns  map[token.Type]infixParseFn
 }
 
-func (p *Parser) peekPrecedence() int {
-	if v, ok := ast.Precedences[p.next.Type]; ok {
-		return v
-	}
-	return ast.Lowest
-}
 func New(rd io.RuneReader) *Parser {
 	p := &Parser{
 		s: scanner.New(rd),
 	}
 
-	p.infixParseFns = make(map[token.TokenType]infixParseFn)
-	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.infixParseFns = make(map[token.Type]infixParseFn)
+	p.prefixParseFns = make(map[token.Type]prefixParseFn)
 	p.registerPrefix(token.Ident, p.parseName)
 	p.registerPrefix(token.String, p.parseStringLiteral)
 	p.registerPrefix(token.Number, p.parseNumberLiteral)
 	p.registerPrefix(token.OpenCurly, p.parseHashLiteral)
 	p.registerPrefix(token.OpenBracket, p.parseArrayLiteral)
+	p.registerPrefix(token.Function, p.parseFunctionLiteral)
 
 	p.registerPrefix(token.Dot, p.parseDotExpression)
 
@@ -59,10 +54,6 @@ func New(rd io.RuneReader) *Parser {
 func NewString(data string) *Parser {
 	return New(strings.NewReader(data))
 }
-func (p *Parser) nextToken() {
-	p.current = p.next
-	p.next = p.s.NextToken()
-}
 
 func (p *Parser) Parse() *ast.Program {
 
@@ -80,25 +71,45 @@ func (p *Parser) Parse() *ast.Program {
 	return program
 }
 
-func (p *Parser) curPrecedence() int {
-	if p, ok := ast.Precedences[p.current.Type]; ok {
-		return p
+func (p *Parser) parseFunctionLiteral() ast.Expression {
+	fn := &ast.FunctionLiteral{Token: p.current}
+	// name
+	p.nextToken()
+	fn.Name = p.current.Value
+	if !p.expectPeek(token.OpenParen) {
+		return nil
 	}
-
-	return ast.Lowest
+	fn.Parameters = p.parseFunctionArguments()
+	if !p.expectPeek(token.OpenCurly) {
+		return nil
+	}
+	fn.Body = p.parseBlockStatement()
+	return fn
 }
 
-func (p *Parser) currentTokenIs(tokenType token.TokenType) bool {
-	return p.current.Type == tokenType
-}
-func (p *Parser) peekTokenIs(tokenType token.TokenType) bool {
-	return p.next.Type == tokenType
-}
+func (p *Parser) parseFunctionArguments() []*ast.Identifier {
+	var identifiers []*ast.Identifier
 
-func (p *Parser) expectPeek(tokenType token.TokenType) bool {
-	if p.peekTokenIs(tokenType) {
+	if p.peekTokenIs(token.CloseParen) {
 		p.nextToken()
-		return true
+
+		return identifiers
 	}
-	return false
+	p.nextToken() // eat OpenParen
+
+	ident := &ast.Identifier{Token: p.current, Value: p.current.Value}
+	identifiers = append(identifiers, ident)
+	for p.peekTokenIs(token.Comma) {
+		p.nextToken() // Eat Comma
+
+		p.nextToken() // become thing after comma
+
+		ident := &ast.Identifier{Token: p.current, Value: p.current.Value}
+		identifiers = append(identifiers, ident)
+	}
+
+	if !p.expectPeek(token.CloseParen) {
+		return nil
+	}
+	return identifiers
 }

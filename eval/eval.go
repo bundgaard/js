@@ -11,9 +11,30 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 	switch fn := fn.(type) {
 	case *object.BuiltinObject:
 		return fn.Fn(args...)
+	case *object.Function:
+		extendedEnv := extendFunctionEnv(fn, args)
+		evaluated := Eval(fn.Body, extendedEnv)
+		return unwrapReturnValue(evaluated)
+
 	default:
 		return newError("not function: %q", fn.Type())
 	}
+}
+
+func unwrapReturnValue(obj object.Object) object.Object {
+	if returnValue, ok := obj.(*object.ReturnValue); ok {
+		return returnValue.Value
+	}
+	return obj
+}
+
+func extendFunctionEnv(fn *object.Function, args []object.Object) *object.Environment {
+	env := object.NewEnclosedEnvironment(fn.Environment)
+	for idx, param := range fn.Parameters {
+		env.Set(param.Value, args[idx])
+	}
+	return env
+
 }
 
 func evalExpressions(exps []ast.Expression, environment *object.Environment) []object.Object {
@@ -28,7 +49,7 @@ func evalExpressions(exps []ast.Expression, environment *object.Environment) []o
 	return result
 
 }
-func EvalWithEnvironment(program ast.Node) (object.Object, *object.Environment) {
+func WithEnvironment(program ast.Node) (object.Object, *object.Environment) {
 	environment := object.NewEnvironment()
 	return Eval(program, environment), environment
 }
@@ -40,6 +61,8 @@ func Eval(n ast.Node, environment *object.Environment) object.Object {
 		return evalProgram(v, environment)
 	case *ast.ExpressionStatement:
 		return Eval(v.Expression, environment)
+	case *ast.BlockStatement:
+		return evalBlockStatement(v, environment)
 
 	case *ast.VariableStatement:
 		value := Eval(v.Value, environment)
@@ -95,13 +118,43 @@ func Eval(n ast.Node, environment *object.Environment) object.Object {
 			return elements[0]
 		}
 		return &object.Array{Elements: elements}
+	case *ast.FunctionLiteral:
+		params := v.Parameters
+		body := v.Body
 
+		fn := &object.Function{
+			Token:       v.Token,
+			Name:        v.Name,
+			Parameters:  params,
+			Body:        body,
+			Environment: environment,
+		}
+		if v.Name != "" {
+			environment.Set(v.Name, fn)
+		}
+		return fn
 	default:
 		log.Printf("eval unhandled type %T %v", v, v)
 	}
 
 	return nil
 
+}
+
+func evalBlockStatement(node *ast.BlockStatement, env *object.Environment) object.Object {
+	var result object.Object
+
+	for _, statement := range node.Statements {
+		result = Eval(statement, env)
+
+		if result != nil {
+			rt := result.Type()
+			if rt == object.ReturnValueObject || rt == object.ErrorObject {
+				return result
+			}
+		}
+	}
+	return result
 }
 
 func evalHashLiteral(hashLiteral *ast.HashLiteral, environment *object.Environment) object.Object {

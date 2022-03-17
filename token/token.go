@@ -1,10 +1,10 @@
 package token
 
 //go:generate stringer -type TokenType
-type TokenType uint8
+type Type uint8
 
 const (
-	_ TokenType = iota
+	_ Type = iota
 	EOF
 	Illegal
 
@@ -36,17 +36,19 @@ const (
 
 	Var
 	Number
+	Function
 )
 
-var Keywords = map[string]TokenType{
+var Keywords = map[string]Type{
 	"var": Var,
+	"fn":  Function,
 }
 
 type Token struct {
-	Type  TokenType
+	Type  Type
 	Value string
 }
 
-func New(tokenType TokenType, value string) *Token {
+func New(tokenType Type, value string) *Token {
 	return &Token{Type: tokenType, Value: value}
 }

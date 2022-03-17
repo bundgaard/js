@@ -61,7 +61,6 @@ var o = ["hej", "med", "dig"];
 		t.Logf("%v -> %v", key, val.Inspect())
 	})
 }
-
 func TestEvalBuiltin(t *testing.T) {
 	code := `println("Hello, World!");`
 	e := object.NewEnvironment()
@@ -72,14 +71,26 @@ func TestEvalBuiltin(t *testing.T) {
 
 }
 
+func TestEvalFunction1(t *testing.T) {
+
+	p := parser.New(strings.NewReader(`fn hej() { println("hello, world!"); }`))
+	env := object.NewEnvironment()
+	result := Eval(p.Parse(), env)
+
+	t.Logf("Function result %v", result)
+	t.Logf("Environment %v", env)
+}
+
 func TestEvalFunction(t *testing.T) {
 
 	p := parser.NewString(`
 fn hej() {
 println("hello, world!");
-}`)
+}
 
-	output, env := EvalWithEnvironment(p.Parse())
+hej();`)
+
+	output, env := WithEnvironment(p.Parse())
 	t.Logf("%v %v", output, env)
 
 }

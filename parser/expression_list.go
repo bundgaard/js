@@ -5,7 +5,7 @@ import (
 	"github.com/bundgaard/js/token"
 )
 
-func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
+func (p *Parser) parseExpressionList(end token.Type) []ast.Expression {
 	var list []ast.Expression
 
 	if p.peekTokenIs(end) {
