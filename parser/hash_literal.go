@@ -3,18 +3,20 @@ package parser
 import (
 	"github.com/bundgaard/js/ast"
 	"github.com/bundgaard/js/token"
+	"log"
 )
 
 func (p *Parser) parseHashLiteral() ast.Expression {
-
+	log.Printf("parseHashLiteral %q", p.current)
 	hash := &ast.HashLiteral{Token: p.current}
 	hash.Pairs = make(map[ast.Expression]ast.Expression)
 
 	for !p.peekTokenIs(token.CloseCurly) {
 		p.nextToken() // eat open curly
-
+		log.Printf("\t%q", p.current)
 		key := p.parseExpression(ast.Lowest)
-
+		log.Printf("\t%q", key)
+		log.Printf("\t%q", p.current)
 		if !p.expectPeek(token.Colon) {
 			return nil
 		}

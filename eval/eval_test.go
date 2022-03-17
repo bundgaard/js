@@ -3,10 +3,36 @@ package eval
 import (
 	"github.com/bundgaard/js/object"
 	"github.com/bundgaard/js/parser"
+	"log"
 	"strings"
 	"testing"
 )
 
+func TestEvalMapObject(t *testing.T) {
+	p := parser.NewParser(strings.NewReader(`
+var u = {"hej": 1, "med": "two"};
+
+`))
+	environment := object.NewEnvironment()
+	evaluatedProgram := Eval(p.Parse(), environment)
+	t.Log(evaluatedProgram)
+	environment.ForEach(func(key string, val object.Object) {
+		t.Logf("%v -> %v", key, val.Inspect())
+	})
+}
+func TestEvalArrayObject(t *testing.T) {
+	p := parser.NewParser(strings.NewReader(`
+var o = ["hej", "med", "dig"];
+var u = [1,2,3,4];
+`))
+	environment := object.NewEnvironment()
+	evaluatedProgram := Eval(p.Parse(), environment)
+	t.Log(evaluatedProgram)
+	environment.ForEach(func(key string, val object.Object) {
+		t.Logf("%v -> %v", key, val.Inspect())
+	})
+	log.Printf("")
+}
 func TestEval(t *testing.T) {
 	p := parser.NewParser(strings.NewReader(`var x = 100;
 var y = 100

@@ -29,7 +29,7 @@ func evalExpressions(exps []ast.Expression, environment *object.Environment) []o
 
 }
 func Eval(n ast.Node, environment *object.Environment) object.Object {
-	log.Printf("Eval %T %v", n, n)
+	// log.Printf("Eval %T %v", n, n)
 	switch v := n.(type) {
 	case *ast.Program:
 		return evalProgram(v, environment)
@@ -81,43 +81,15 @@ func Eval(n ast.Node, environment *object.Environment) object.Object {
 	case *ast.StringLiteral:
 		return &object.StringObject{Value: v.Value}
 	case *ast.IndexExpression:
-		left := Eval(v.Left, environment)
-		if left != nil && isError(left) {
-			return left
-		}
-
-		index := Eval(v.Index, environment)
-		if index != nil && isError(index) {
-			return index
-		}
-
-		return evalIndexExpression(left, index)
-
+		return evalIndexExpression(v, environment)
 	case *ast.HashLiteral:
-		pairs := make(map[object.HashKey]object.HashPair)
-		for kn, vn := range v.Pairs {
-			key := Eval(kn, environment)
-			if key != nil && isError(key) {
-				return key
-			}
-
-			hkey, ok := key.(object.Hashable)
-			if !ok {
-				return &object.Error{Message: fmt.Sprintf("unushable hash key: %v", key.Type())}
-			}
-
-			value := Eval(vn, environment)
-			if value != nil {
-				if value.Type() == object.ErrorObject {
-					return value
-				}
-			}
-
-			hashed := hkey.HashKey()
-			pairs[hashed] = object.HashPair{Key: key, Value: value}
+		return evalHashLiteral(v, environment)
+	case *ast.ArrayLiteral:
+		elements := evalExpressions(v.Elements, environment)
+		if len(elements) == 1 && isError(elements[0]) {
+			return elements[0]
 		}
-
-		return &object.Hash{Pairs: pairs}
+		return &object.Array{Elements: elements}
 
 	default:
 		log.Printf("eval unhandled type %T %v", v, v)
@@ -127,7 +99,45 @@ func Eval(n ast.Node, environment *object.Environment) object.Object {
 
 }
 
-func evalIndexExpression(left, index object.Object) object.Object {
+func evalHashLiteral(hashLiteral *ast.HashLiteral, environment *object.Environment) object.Object {
+	pairs := make(map[object.HashKey]object.HashPair)
+
+	for kn, vn := range hashLiteral.Pairs {
+		key := Eval(kn, environment)
+		if key != nil && isError(key) {
+			return key
+		}
+
+		hkey, ok := key.(object.Hashable)
+		if !ok {
+			return &object.Error{Message: fmt.Sprintf("unushable hash key: %q", key.Type())}
+		}
+
+		value := Eval(vn, environment)
+		if value != nil {
+			if value.Type() == object.ErrorObject {
+				return value
+			}
+		}
+
+		hashed := hkey.HashKey()
+		pairs[hashed] = object.HashPair{Key: key, Value: value}
+	}
+
+	return &object.Hash{Pairs: pairs}
+}
+
+func evalIndexExpression(v *ast.IndexExpression, environment *object.Environment) object.Object {
+	left := Eval(v.Left, environment)
+	if left != nil && isError(left) {
+		return left
+	}
+
+	index := Eval(v.Index, environment)
+	if index != nil && isError(index) {
+		return index
+	}
+
 	return &object.Error{Message: "skipping index for now"}
 }
 

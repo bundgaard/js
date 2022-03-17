@@ -83,6 +83,8 @@ func (s *Scanner) NextToken() *token.Token {
 		r := s.read()
 		switch {
 		case isSpace(r):
+		case r == ':':
+			return token.New(token.Colon, ":")
 		case r == '=':
 			return token.New(token.Assign, "=")
 		case r == EofRune:

@@ -3,12 +3,10 @@ package parser
 import (
 	"github.com/bundgaard/js/ast"
 	"github.com/bundgaard/js/token"
-	"log"
 )
 
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 
-	log.Printf("parse CallExpression %v", function)
 	exp := &ast.CallExpression{
 		Token:    p.current,
 		Function: function,
@@ -17,7 +15,7 @@ func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	return exp
 }
 func (p *Parser) parseCallArguments() []ast.Expression {
-	log.Printf("parseCallArguments  %v %s %s", p.current, p.current.Value, p.current.Type)
+	// log.Printf("parseCallArguments  %v %s %s", p.current, p.current.Value, p.current.Type)
 	var args []ast.Expression
 
 	if p.peekTokenIs(token.CloseParen) {
@@ -36,6 +34,6 @@ func (p *Parser) parseCallArguments() []ast.Expression {
 	if !p.expectPeek(token.CloseParen) {
 		return nil
 	}
-	log.Printf("call arguments %v", args)
+	// log.Printf("call arguments %v", args)
 	return args
 }

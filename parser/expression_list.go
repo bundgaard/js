@@ -15,6 +15,7 @@ func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
 
 	p.nextToken()
 	list = append(list, p.parseExpression(ast.Lowest))
+
 	for p.peekTokenIs(token.Comma) {
 		p.nextToken() // ,
 		p.nextToken() // Expression

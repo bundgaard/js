@@ -14,6 +14,7 @@ func (p *Parser) parseExpression(priority int) ast.Expression {
 	if p.currentTokenIs(token.CommentLine) || p.currentTokenIs(token.CommentBlock) {
 		p.nextToken()
 	}
+
 	prefix := p.prefixParseFns[p.current.Type]
 	if prefix == nil {
 		if counter.Get() == 10 {
@@ -32,6 +33,7 @@ func (p *Parser) parseExpression(priority int) ast.Expression {
 		counter.Add()
 		return nil
 	}
+
 	leftExp := prefix()
 
 	for !p.peekTokenIs(token.Semi) && priority < p.peekPrecedence() {
@@ -43,5 +45,6 @@ func (p *Parser) parseExpression(priority int) ast.Expression {
 
 		leftExp = infix(leftExp)
 	}
+	log.Printf("END parse expression %q %q", p.current, leftExp)
 	return leftExp
 }
