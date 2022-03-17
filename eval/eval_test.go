@@ -93,4 +93,6 @@ hej();`)
 	output, env := WithEnvironment(p.Parse())
 	t.Logf("%v %v", output, env)
 
+	t.Logf("%c", 127)
+	t.Logf("%c", 219)
 }
