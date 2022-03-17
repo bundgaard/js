@@ -52,7 +52,7 @@ func TestParser(t *testing.T) {
 	}
 
 	for idx, test := range tests {
-		p := NewParser(strings.NewReader(test.Input))
+		p := New(strings.NewReader(test.Input))
 
 		program := p.Parse()
 		if !helperDeepEqual(t, test.Expected, program) {

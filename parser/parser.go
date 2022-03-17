@@ -5,6 +5,7 @@ import (
 	"github.com/bundgaard/js/scanner"
 	"github.com/bundgaard/js/token"
 	"io"
+	"strings"
 )
 
 type (
@@ -27,7 +28,7 @@ func (p *Parser) peekPrecedence() int {
 	}
 	return ast.Lowest
 }
-func NewParser(rd io.RuneReader) *Parser {
+func New(rd io.RuneReader) *Parser {
 	p := &Parser{
 		s: scanner.New(rd),
 	}
@@ -55,6 +56,9 @@ func NewParser(rd io.RuneReader) *Parser {
 	return p
 }
 
+func NewString(data string) *Parser {
+	return New(strings.NewReader(data))
+}
 func (p *Parser) nextToken() {
 	p.current = p.next
 	p.next = p.s.NextToken()

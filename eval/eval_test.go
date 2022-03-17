@@ -9,7 +9,7 @@ import (
 )
 
 func TestEvalMapObject(t *testing.T) {
-	p := parser.NewParser(strings.NewReader(`
+	p := parser.New(strings.NewReader(`
 var u = {"hej": 1, "med": "two"};
 
 `))
@@ -21,7 +21,7 @@ var u = {"hej": 1, "med": "two"};
 	})
 }
 func TestEvalArrayObject(t *testing.T) {
-	p := parser.NewParser(strings.NewReader(`
+	p := parser.New(strings.NewReader(`
 var o = ["hej", "med", "dig"];
 var u = [1,2,3,4];
 `))
@@ -34,7 +34,7 @@ var u = [1,2,3,4];
 	log.Printf("")
 }
 func TestEval(t *testing.T) {
-	p := parser.NewParser(strings.NewReader(`var x = 100;
+	p := parser.New(strings.NewReader(`var x = 100;
 var y = 100
 
 var z = x * y;
@@ -65,9 +65,21 @@ var o = ["hej", "med", "dig"];
 func TestEvalBuiltin(t *testing.T) {
 	code := `println("Hello, World!");`
 	e := object.NewEnvironment()
-	newParser := parser.NewParser(strings.NewReader(code))
+	newParser := parser.New(strings.NewReader(code))
 	eProgram := Eval(newParser.Parse(), e)
 
 	t.Logf("%v", eProgram)
+
+}
+
+func TestEvalFunction(t *testing.T) {
+
+	p := parser.NewString(`
+fn hej() {
+println("hello, world!");
+}`)
+
+	output, env := EvalWithEnvironment(p.Parse())
+	t.Logf("%v %v", output, env)
 
 }

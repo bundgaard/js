@@ -28,6 +28,11 @@ func evalExpressions(exps []ast.Expression, environment *object.Environment) []o
 	return result
 
 }
+func EvalWithEnvironment(program ast.Node) (object.Object, *object.Environment) {
+	environment := object.NewEnvironment()
+	return Eval(program, environment), environment
+}
+
 func Eval(n ast.Node, environment *object.Environment) object.Object {
 	// log.Printf("Eval %T %v", n, n)
 	switch v := n.(type) {
