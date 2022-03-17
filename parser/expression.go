@@ -45,6 +45,6 @@ func (p *Parser) parseExpression(priority int) ast.Expression {
 
 		leftExp = infix(leftExp)
 	}
-	log.Printf("END parse expression %q %q", p.current, leftExp)
+	// log.Printf("END parse expression %q %q", p.current, leftExp)
 	return leftExp
 }
