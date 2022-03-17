@@ -6,6 +6,34 @@ import (
 	"testing"
 )
 
+func TestScannerWithEscaped(t *testing.T) {
+	s := New(strings.NewReader(`
+
+	var t = "Hello, \"World!\"";
+	`))
+
+	tk := s.NextToken()
+	isToken(t, tk, token2.Var)
+
+	tk = s.NextToken()
+	isToken(t, tk, token2.Ident)
+
+	tk = s.NextToken()
+	isToken(t, tk, token2.Assign)
+
+	tk = s.NextToken()
+	isToken(t, tk, token2.String)
+
+	if tk.Value != "Hello, \\\"World!\\\"" {
+		t.Errorf("expected %v (%d). got %v (%d)", "Hello, \\\"World!\\\"", len("Hello, \\\"World!\\\""), []byte(tk.Value), len(tk.Value))
+	}
+}
+func isToken(t *testing.T, tk *token2.Token, expected token2.Type) {
+	t.Helper()
+	if tk.Type != expected {
+		t.Errorf("expected %q. got %q", expected, tk)
+	}
+}
 func TestScanner(t *testing.T) {
 	s := New(strings.NewReader(`
 	/* 

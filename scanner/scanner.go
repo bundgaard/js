@@ -168,7 +168,25 @@ func (s *Scanner) NextToken() *token.Token {
 func (s *Scanner) readString(quote rune) string {
 	s.Buf.Reset()
 
-	for s.peek() != quote {
+	var escaped bool
+	// "foobar"
+	// "\"foobar\""
+	for {
+		// TODO: fix so we read escape characters \<?>
+		if !escaped && s.peek() == quote {
+			break
+		}
+
+		// Are we escaped ?
+		// Escaped characters would be \\, \' \", \/
+		if s.peek() == '\\' {
+			r := s.read() // consume slash
+			if s.peek() == quote {
+				s.Buf.WriteRune(r)
+
+				escaped = !escaped
+			}
+		}
 		r := s.read()
 		s.Buf.WriteRune(r)
 	}
