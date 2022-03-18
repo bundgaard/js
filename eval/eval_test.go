@@ -17,6 +17,7 @@ var u = {"hej": 1, "med": "two"};
 	evaluatedProgram := Eval(p.Parse(), environment)
 	t.Log(evaluatedProgram)
 	environment.ForEach(func(key string, val object.Object) {
+
 		t.Logf("%v -> %v", key, val.Inspect())
 	})
 }

@@ -7,28 +7,6 @@ import (
 	"testing"
 )
 
-func TestCallable(t *testing.T) {
-	tests := []struct {
-		Input    string
-		Expected *ast.Program
-	}{
-		{
-			Input:    `println("hello, world!");`,
-			Expected: &ast.Program{Statements: []ast.Statement{
-				/*&ast.CallExpression{
-					Token: token.Token{
-						Type:  token.Ident,
-						Value: "println",
-					},
-					Function:  nil,
-					Arguments: nil,
-				},*/
-			}},
-		},
-	}
-	_ = tests
-}
-
 func TestParser(t *testing.T) {
 
 	tests := []struct {
