@@ -121,3 +121,12 @@ println(x[0]);`)
 	t.Logf("%v %v", output, environ)
 
 }
+
+func TestEvalWithHashIndexOperation(t *testing.T) {
+	p := parser.NewString(`var x = {"hej": "dig"};
+println(x["hej"]);`)
+
+	output, env := WithEnvironment(p.Parse())
+	t.Logf("%v %v", output, env)
+
+}

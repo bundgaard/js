@@ -174,10 +174,28 @@ func evalIndexExpression(v *ast.IndexExpression, environment *object.Environment
 	switch {
 	case left.Type() == object.ArrayType && index.Type() == object.NumberType:
 		return evalArrayIndexExpression(left, index)
+	case left.Type() == object.HashType:
+		return evalHashIndexExpression(left, index)
 	default:
 		return &object.Error{Message: fmt.Sprintf("skipping index for now %T %T", left, index)}
 
 	}
+
+}
+
+func evalHashIndexExpression(hash object.Object, index object.Object) object.Object {
+	hashObj := hash.(*object.Hash)
+	key, ok := index.(object.Hashable)
+	if !ok {
+		return newError("unusable as hash key: %q", index.Type())
+	}
+
+	pair, ok := hashObj.Pairs[key.HashKey()]
+	if !ok {
+		return &object.NullObject{}
+	}
+
+	return pair.Value
 
 }
 
