@@ -9,7 +9,7 @@ import (
 func TestScannerWithEscaped(t *testing.T) {
 	s := New(strings.NewReader(`
 
-	var t = "Hello, \"World!\"";
+	var t = "Hello, \"World!\" String";
 	`))
 
 	tk := s.NextToken()
@@ -24,7 +24,7 @@ func TestScannerWithEscaped(t *testing.T) {
 	tk = s.NextToken()
 	isToken(t, tk, token2.String)
 
-	if tk.Value != "Hello, \\\"World!\\\"" {
+	if tk.Value != "Hello, \\\"World!\\\" String" {
 		t.Errorf("expected %v (%d). got %v (%d)", "Hello, \\\"World!\\\"", len("Hello, \\\"World!\\\""), []byte(tk.Value), len(tk.Value))
 	}
 }
