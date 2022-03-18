@@ -106,6 +106,8 @@ func Eval(n ast.Node, environment *object.Environment) object.Object {
 
 	case *ast.Boolean:
 		return &object.Boolean{Value: v.Value}
+	case *ast.Null:
+		return &object.NullObject{}
 	default:
 		log.Printf("eval unhandled type %T %v", v, v)
 	}
@@ -170,10 +172,10 @@ func evalIndexExpression(v *ast.IndexExpression, environment *object.Environment
 	}
 
 	switch {
-	case left.Type() == object.ArrayType && index.Type() == object.IntegerType:
+	case left.Type() == object.ArrayType && index.Type() == object.NumberType:
 		return evalArrayIndexExpression(left, index)
 	default:
-		return &object.Error{Message: "skipping index for now"}
+		return &object.Error{Message: fmt.Sprintf("skipping index for now %T %T", left, index)}
 
 	}
 
@@ -181,7 +183,7 @@ func evalIndexExpression(v *ast.IndexExpression, environment *object.Environment
 
 func evalArrayIndexExpression(array, index object.Object) object.Object {
 	arrayObject := array.(*object.Array)
-	idx := index.(*object.Integer).Value
+	idx := index.(*object.NumberObject).Value
 	max := int64(len(arrayObject.Elements) - 1)
 
 	if idx < 0 || idx > max {

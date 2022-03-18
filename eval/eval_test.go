@@ -112,3 +112,12 @@ println(sand);`)
 	}
 	t.Logf("%v %v", output, env)
 }
+
+func TestEvalWithIndexOperation(t *testing.T) {
+	p := parser.NewString(`var x = ["Yahoo"];
+println(x[0]);`)
+
+	output, environ := WithEnvironment(p.Parse())
+	t.Logf("%v %v", output, environ)
+
+}
