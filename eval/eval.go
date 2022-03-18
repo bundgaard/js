@@ -169,7 +169,26 @@ func evalIndexExpression(v *ast.IndexExpression, environment *object.Environment
 		return index
 	}
 
-	return &object.Error{Message: "skipping index for now"}
+	switch {
+	case left.Type() == object.ArrayType && index.Type() == object.IntegerType:
+		return evalArrayIndexExpression(left, index)
+	default:
+		return &object.Error{Message: "skipping index for now"}
+
+	}
+
+}
+
+func evalArrayIndexExpression(array, index object.Object) object.Object {
+	arrayObject := array.(*object.Array)
+	idx := index.(*object.Integer).Value
+	max := int64(len(arrayObject.Elements) - 1)
+
+	if idx < 0 || idx > max {
+		return &object.NullObject{}
+	}
+	return arrayObject.Elements[idx]
+
 }
 
 func evalStringInfixExpression(operator string, left, right object.Object, env *object.Environment) object.Object {
