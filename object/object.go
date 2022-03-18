@@ -97,9 +97,11 @@ type Hash struct {
 
 func (h *Hash) Type() ObjectType { return HashObject }
 func (h *Hash) Inspect() string {
-	var out bytes.Buffer
+	var (
+		out   bytes.Buffer
+		pairs []string
+	)
 
-	pairs := []string{}
 	for _, pair := range h.Pairs {
 		pairs = append(pairs, fmt.Sprintf("%s: %s",
 			pair.Key.Inspect(), pair.Value.Inspect()))
@@ -118,8 +120,10 @@ type Array struct {
 
 func (ao *Array) Type() ObjectType { return ArrayObject }
 func (ao *Array) Inspect() string {
-	var out strings.Builder
-	var elements []string
+	var (
+		out      strings.Builder
+		elements []string
+	)
 
 	for _, e := range ao.Elements {
 		elements = append(elements, e.Inspect())

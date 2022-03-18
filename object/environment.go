@@ -1,5 +1,7 @@
 package object
 
+import "fmt"
+
 type Environment struct {
 	store map[string]Object
 	Outer *Environment
@@ -13,6 +15,20 @@ func NewEnvironment() *Environment {
 func (e *Environment) Get(name string) (Object, bool) {
 	obj, ok := e.store[name]
 	return obj, ok
+}
+
+func (e *Environment) GetString(name string) (string, error) {
+	obj, ok := e.store[name]
+	if !ok {
+		return "", fmt.Errorf("%q is not found", name)
+	}
+
+	switch v := obj.(type) {
+	case *StringObject:
+		return v.Value, nil
+	default:
+		return "", fmt.Errorf("%q is not of type string", name)
+	}
 }
 
 func (e *Environment) Set(name string, val Object) Object {

@@ -1,6 +1,6 @@
 package token
 
-//go:generate stringer -type TokenType
+//go:generate stringer -type Type
 type Type uint8
 
 const (
@@ -37,11 +37,17 @@ const (
 	Var
 	Number
 	Function
+	Null
+	True
+	False
 )
 
 var Keywords = map[string]Type{
-	"var": Var,
-	"fn":  Function,
+	"var":   Var,
+	"fn":    Function,
+	"null":  Null,
+	"true":  True,
+	"false": False,
 }
 
 type Token struct {

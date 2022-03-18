@@ -22,6 +22,9 @@ type Parser struct {
 	infixParseFns  map[token.Type]infixParseFn
 }
 
+func (p *Parser) parseBoolean() ast.Expression {
+	return &ast.Boolean{Token: p.current, Value: p.currentTokenIs(token.True)}
+}
 func New(rd io.RuneReader) *Parser {
 	p := &Parser{
 		s: scanner.New(rd),
@@ -35,6 +38,9 @@ func New(rd io.RuneReader) *Parser {
 	p.registerPrefix(token.OpenCurly, p.parseHashLiteral)
 	p.registerPrefix(token.OpenBracket, p.parseArrayLiteral)
 	p.registerPrefix(token.Function, p.parseFunctionLiteral)
+	p.registerPrefix(token.True, p.parseBoolean)
+	p.registerPrefix(token.False, p.parseBoolean)
+	p.registerPrefix(token.Null, p.parseNull)
 
 	p.registerPrefix(token.Dot, p.parseDotExpression)
 
@@ -112,4 +118,8 @@ func (p *Parser) parseFunctionArguments() []*ast.Identifier {
 		return nil
 	}
 	return identifiers
+}
+
+func (p *Parser) parseNull() ast.Expression {
+	return &ast.Null{Value: "null", Token: p.current}
 }
