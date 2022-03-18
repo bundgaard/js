@@ -5,5 +5,5 @@ type BuiltinObject struct {
 	Fn BuiltinFunction
 }
 
-func (b *BuiltinObject) Type() ObjectType { return BuiltinObj }
-func (b *BuiltinObject) Inspect() string  { return "builtin function" }
+func (b *BuiltinObject) Type() Type      { return BuiltinType }
+func (b *BuiltinObject) Inspect() string { return "builtin function" }

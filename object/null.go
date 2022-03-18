@@ -3,5 +3,5 @@ package object
 type NullObject struct {
 }
 
-func (no *NullObject) Type() ObjectType { return NullObj }
-func (no *NullObject) Inspect() string  { return "null" }
+func (no *NullObject) Type() Type      { return NullType }
+func (no *NullObject) Inspect() string { return "null" }

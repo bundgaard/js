@@ -4,5 +4,5 @@ type ReturnValue struct {
 	Value Object
 }
 
-func (rv *ReturnValue) Type() ObjectType { return ReturnValueObject }
-func (rv *ReturnValue) Inspect() string  { return rv.Value.Inspect() }
+func (rv *ReturnValue) Type() Type      { return ReturnValueType }
+func (rv *ReturnValue) Inspect() string { return rv.Value.Inspect() }

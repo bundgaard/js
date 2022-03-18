@@ -97,3 +97,18 @@ hej();`)
 	t.Logf("%c", 127)
 	t.Logf("%c", 219)
 }
+
+func TestBoolean(t *testing.T) {
+	p := parser.NewString(`var sand = true;
+println(sand);`)
+
+	output, env := WithEnvironment(p.Parse())
+	got, err := env.GetBool("sand")
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	if !got {
+		t.Errorf("expected true. got %t", got)
+	}
+	t.Logf("%v %v", output, env)
+}

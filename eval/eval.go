@@ -7,36 +7,6 @@ import (
 	"log"
 )
 
-func applyFunction(fn object.Object, args []object.Object) object.Object {
-	switch fn := fn.(type) {
-	case *object.BuiltinObject:
-		return fn.Fn(args...)
-	case *object.Function:
-		extendedEnv := extendFunctionEnv(fn, args)
-		evaluated := Eval(fn.Body, extendedEnv)
-		return unwrapReturnValue(evaluated)
-
-	default:
-		return newError("not function: %q", fn.Type())
-	}
-}
-
-func unwrapReturnValue(obj object.Object) object.Object {
-	if returnValue, ok := obj.(*object.ReturnValue); ok {
-		return returnValue.Value
-	}
-	return obj
-}
-
-func extendFunctionEnv(fn *object.Function, args []object.Object) *object.Environment {
-	env := object.NewEnclosedEnvironment(fn.Environment)
-	for idx, param := range fn.Parameters {
-		env.Set(param.Value, args[idx])
-	}
-	return env
-
-}
-
 func evalExpressions(exps []ast.Expression, environment *object.Environment) []object.Object {
 	var result []object.Object
 	for _, e := range exps {
@@ -133,6 +103,9 @@ func Eval(n ast.Node, environment *object.Environment) object.Object {
 			environment.Set(v.Name, fn)
 		}
 		return fn
+
+	case *ast.Boolean:
+		return &object.Boolean{Value: v.Value}
 	default:
 		log.Printf("eval unhandled type %T %v", v, v)
 	}
@@ -149,7 +122,7 @@ func evalBlockStatement(node *ast.BlockStatement, env *object.Environment) objec
 
 		if result != nil {
 			rt := result.Type()
-			if rt == object.ReturnValueObject || rt == object.ErrorObject {
+			if rt == object.ReturnValueType || rt == object.ErrorType {
 				return result
 			}
 		}
@@ -173,7 +146,7 @@ func evalHashLiteral(hashLiteral *ast.HashLiteral, environment *object.Environme
 
 		value := Eval(vn, environment)
 		if value != nil {
-			if value.Type() == object.ErrorObject {
+			if value.Type() == object.ErrorType {
 				return value
 			}
 		}
@@ -226,9 +199,9 @@ func evalNumberInfixExpression(operator string, left, right object.Object, env *
 func evalInfixExpression(operator string, left, right object.Object, env *object.Environment) object.Object {
 
 	switch {
-	case left.Type() == object.StringObj && right.Type() == object.StringObj:
+	case left.Type() == object.StringType && right.Type() == object.StringType:
 		return evalStringInfixExpression(operator, left, right, env)
-	case left.Type() == object.NumberObj && right.Type() == object.NumberObj:
+	case left.Type() == object.NumberType && right.Type() == object.NumberType:
 		return evalNumberInfixExpression(operator, left, right, env)
 	case left.Type() != right.Type():
 		return &object.Error{Message: fmt.Sprintf("type mismatch %v %s %v", left.Type(), operator, right.Type())}

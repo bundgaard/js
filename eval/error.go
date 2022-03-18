@@ -7,7 +7,7 @@ import (
 
 func isError(obj object.Object) bool {
 	if obj != nil {
-		return obj.Type() == object.ErrorObject
+		return obj.Type() == object.ErrorType
 	}
 	return false
 }
