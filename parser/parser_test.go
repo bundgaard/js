@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"encoding/json"
 	"github.com/bundgaard/js/ast"
 	"github.com/bundgaard/js/token"
 	"strings"
@@ -40,7 +41,20 @@ func TestParser(t *testing.T) {
 	}
 
 }
-
+func TestParserNumberExpression(t *testing.T) {
+	p := New(strings.NewReader("(1 + 2) * 100"))
+	program := p.Parse()
+	content, err := json.Marshal(program)
+	if err != nil {
+		t.Error(err)
+	}
+	expect := `{"Statements":[{"Token":{"Type":17,"Value":"("},"Expression":{"Token":{"Type":15,"Value":"*"},"Left":{"Token":{"Type":13,"Value":"+"},"Left":{"Token":{"Type":26,"Value":"1"},"Value":1},"Operator":"+","Right":{"Token":{"Type":26,"Value":"2"},"Value":2}},"Operator":"*","Right":{"Token":{"Type":26,"Value":"100"},"Value":100}}}]}`
+	if string(content) != expect {
+		t.Fail()
+	}
+	t.Logf("content %s", content)
+	t.Logf("%#v\n\n%s", program, program)
+}
 func helperDeepEqual(t *testing.T, expected, got *ast.Program) bool {
 	t.Helper()
 	result := false

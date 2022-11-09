@@ -37,6 +37,7 @@ func New(rd io.RuneReader) *Parser {
 	p.registerPrefix(token.Number, p.parseNumberLiteral)
 	p.registerPrefix(token.OpenCurly, p.parseHashLiteral)
 	p.registerPrefix(token.OpenBracket, p.parseArrayLiteral)
+	p.registerPrefix(token.OpenParen, p.groupedExpression)
 	p.registerPrefix(token.Function, p.parseFunctionLiteral)
 	p.registerPrefix(token.True, p.parseBoolean)
 	p.registerPrefix(token.False, p.parseBoolean)
@@ -122,4 +123,13 @@ func (p *Parser) parseFunctionArguments() []*ast.Identifier {
 
 func (p *Parser) parseNull() ast.Expression {
 	return &ast.Null{Value: "null", Token: p.current}
+}
+
+func (p *Parser) groupedExpression() ast.Expression {
+	p.nextToken() // Skip (
+	expr := p.parseExpression(ast.Lowest)
+	if !p.expectPeek(token.CloseParen) {
+		return nil
+	}
+	return expr
 }
